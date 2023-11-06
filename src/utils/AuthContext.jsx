@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import { account } from "../appwriteConfig";
 import { useNavigate } from "react-router-dom";
+import {ID} from 'appwrite'
 
 const AuthContext = createContext()
 
@@ -17,10 +18,10 @@ export const AuthProvider = ({children}) => {
 
     const getUserOnLoad = async () => {
         try{
-            const accountDetails = await account.get()
+            let accountDetails = await account.get()
             setUser(accountDetails)
         }catch(error){
-            console.error(error)
+            console.info(error)
         }
         setLoading(false)
     }
@@ -29,9 +30,9 @@ export const AuthProvider = ({children}) => {
         e.preventDefault()
     
         try{
-            const response = await account.createEmailSession(credentials.email, credentials.password)
+            let response = await account.createEmailSession(credentials.email, credentials.password)
             
-            const accountDetails = await account.get()
+            let accountDetails = await account.get()
             setUser(accountDetails)
 
             navigate('/')
@@ -44,11 +45,39 @@ export const AuthProvider = ({children}) => {
         await account.deleteSession('current')
         setUser(null)
       }
+
+      const handleUserRegister = async (e, credentials) => {
+        e.preventDefault()
+
+        if (credentials.password1 !== credentials.password2){
+            alert('Passwords do not match!')
+            return
+        }
+        try{
+            let response = await account.create(
+                ID.unique(), 
+                credentials.name,
+                credentials.email, 
+                credentials.password1,
+                )
+
+            await account.createEmailSession(credentials.email, credentials.password1)
+
+            let accountDetails = await account.get()
+            setUser(accountDetails)
+            navigate('/')
+
+            console.log('REGISTERED', response)
+        }catch(error){
+            console.error(error)
+        }
+      }
     
       const contextData = {
         user,
         handleUserLogin,
         handleUserLogout,
+        handleUserRegister,
       }
 
 
